@@ -1,161 +1,85 @@
 local Library = {}
 
--- Services
-local TweenService = game:GetService("TweenService")
-local UserInputService = game:GetService("UserInputService")
+function Library:Create(config)
+    local ui = {}
+    ui.Name = config.Name or "UI"
+    ui.Size = config.Size or UDim2.new(0, 500, 0, 300)
+    ui.Theme = config.Theme or {}
 
--- Variables
-Library.Theme = {
-    Accent = Color3.fromRGB(170, 0, 255),
-    WindowBackground = Color3.fromRGB(20, 20, 20),
-    WindowBorder = Color3.fromRGB(50, 50, 50),
-    TabBackground = Color3.fromRGB(30, 30, 30),
-    TabBorder = Color3.fromRGB(50, 50, 50),
-    SectionBackground = Color3.fromRGB(25, 25, 25),
-    SectionBorder = Color3.fromRGB(40, 40, 40),
-    Text = Color3.fromRGB(200, 200, 200),
-    DisabledText = Color3.fromRGB(120, 120, 120),
-    ObjectBackground = Color3.fromRGB(35, 35, 35),
-    ObjectBorder = Color3.fromRGB(50, 50, 50),
-    DropdownOptionBackground = Color3.fromRGB(40, 40, 40)
-}
+    -- Create ScreenGui
+    ui.ScreenGui = Instance.new("ScreenGui")
+    ui.ScreenGui.Name = ui.Name
+    ui.ScreenGui.Parent = game.Players.LocalPlayer:WaitForChild("PlayerGui")
 
-function Library:CreateWindow(title)
-    local ScreenGui = Instance.new("ScreenGui")
-    local MainFrame = Instance.new("Frame")
-    local TabHolder = Instance.new("Frame")
-    local Title = Instance.new("TextLabel")
+    -- Create Main Frame
+    ui.MainFrame = Instance.new("Frame")
+    ui.MainFrame.Size = ui.Size
+    ui.MainFrame.Position = UDim2.new(0.5, -ui.Size.X.Offset / 2, 0.5, -ui.Size.Y.Offset / 2)
+    ui.MainFrame.BackgroundColor3 = ui.Theme.Background or Color3.fromRGB(30, 30, 30)
+    ui.MainFrame.BorderColor3 = ui.Theme.Border or Color3.fromRGB(50, 50, 50)
+    ui.MainFrame.Parent = ui.ScreenGui
 
-    ScreenGui.Parent = game:GetService("CoreGui")
-    ScreenGui.Name = "CustomUILibrary"
+    -- Add tabs, sections, and other functionality
+    ui.Tabs = {}
 
-    MainFrame.Name = "MainFrame"
-    MainFrame.Parent = ScreenGui
-    MainFrame.Size = UDim2.new(0, 600, 0, 400)
-    MainFrame.BackgroundColor3 = Library.Theme.WindowBackground
-    MainFrame.BorderColor3 = Library.Theme.WindowBorder
+    function ui:Tab(config)
+        local tab = {}
+        tab.Name = config.Name or "Tab"
 
-    Title.Name = "Title"
-    Title.Parent = MainFrame
-    Title.Size = UDim2.new(1, 0, 0, 30)
-    Title.BackgroundColor3 = Library.Theme.TabBackground
-    Title.BorderColor3 = Library.Theme.TabBorder
-    Title.Text = title or "UI Library"
-    Title.TextColor3 = Library.Theme.Text
-    Title.Font = Enum.Font.SourceSansBold
-    Title.TextSize = 18
+        -- Create Tab Button
+        tab.Button = Instance.new("TextButton")
+        tab.Button.Text = tab.Name
+        tab.Button.Size = UDim2.new(0, 100, 0, 30)
+        tab.Button.Parent = ui.MainFrame
 
-    TabHolder.Name = "TabHolder"
-    TabHolder.Parent = MainFrame
-    TabHolder.Position = UDim2.new(0, 0, 0, 30)
-    TabHolder.Size = UDim2.new(0, 120, 1, -30)
-    TabHolder.BackgroundColor3 = Library.Theme.TabBackground
-    TabHolder.BorderColor3 = Library.Theme.TabBorder
+        -- Add Sections and other functionalities
+        tab.Sections = {}
 
-    local Tabs = {}
+        function tab:Section(config)
+            local section = {}
+            section.Name = config.Name or "Section"
+            section.Side = config.Side or "Left"
 
-    function Tabs:CreateTab(tabName)
-        local TabButton = Instance.new("TextButton")
-        local TabFrame = Instance.new("Frame")
+            -- Create Section Frame
+            section.Frame = Instance.new("Frame")
+            section.Frame.Size = UDim2.new(0.5, -5, 0, 100)
+            section.Frame.Position = section.Side == "Left" and UDim2.new(0, 5, 0, 40) or UDim2.new(0.5, 5, 0, 40)
+            section.Frame.BackgroundColor3 = ui.Theme.Background
+            section.Frame.BorderColor3 = ui.Theme.Border
+            section.Frame.Parent = ui.MainFrame
 
-        TabButton.Name = tabName .. "Button"
-        TabButton.Parent = TabHolder
-        TabButton.Size = UDim2.new(1, -10, 0, 30)
-        TabButton.Position = UDim2.new(0, 5, 0, #TabHolder:GetChildren() * 35 - 35)
-        TabButton.Text = tabName
-        TabButton.TextColor3 = Library.Theme.Text
-        TabButton.BackgroundColor3 = Library.Theme.ObjectBackground
-        TabButton.BorderColor3 = Library.Theme.ObjectBorder
+            function section:Toggle(config)
+                local toggle = {}
+                toggle.Name = config.Name or "Toggle"
+                toggle.Default = config.Default or false
+                toggle.Callback = config.Callback or function() end
 
-        TabFrame.Name = tabName .. "Frame"
-        TabFrame.Parent = MainFrame
-        TabFrame.Size = UDim2.new(1, -130, 1, -40)
-        TabFrame.Position = UDim2.new(0, 130, 0, 30)
-        TabFrame.BackgroundColor3 = Library.Theme.SectionBackground
-        TabFrame.BorderColor3 = Library.Theme.SectionBorder
-        TabFrame.Visible = false
+                -- Create Toggle Button
+                toggle.Button = Instance.new("TextButton")
+                toggle.Button.Text = toggle.Name
+                toggle.Button.Size = UDim2.new(0, 100, 0, 30)
+                toggle.Button.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+                toggle.Button.Parent = section.Frame
 
-        TabButton.MouseButton1Click:Connect(function()
-            for _, frame in ipairs(MainFrame:GetChildren()) do
-                if frame:IsA("Frame") and frame.Name:match("Frame") then
-                    frame.Visible = false
-                end
+                -- Handle Toggle Click
+                toggle.State = toggle.Default
+                toggle.Button.MouseButton1Click:Connect(function()
+                    toggle.State = not toggle.State
+                    toggle.Callback(toggle.State)
+                end)
+
+                return toggle
             end
-            TabFrame.Visible = true
-        end)
 
-        local Sections = {}
-
-        function Sections:Section(options)
-            local SectionFrame = Instance.new("Frame")
-            local SectionTitle = Instance.new("TextLabel")
-
-            SectionFrame.Name = options.Name .. "Section"
-            SectionFrame.Parent = TabFrame
-            SectionFrame.Size = UDim2.new(0.5, -10, 0, 200)
-            SectionFrame.Position = options.Side == "Right" and UDim2.new(0.5, 5, 0, 10) or UDim2.new(0, 5, 0, 10)
-            SectionFrame.BackgroundColor3 = Library.Theme.SectionBackground
-            SectionFrame.BorderColor3 = Library.Theme.SectionBorder
-
-            SectionTitle.Name = "SectionTitle"
-            SectionTitle.Parent = SectionFrame
-            SectionTitle.Size = UDim2.new(1, 0, 0, 20)
-            SectionTitle.BackgroundColor3 = Library.Theme.ObjectBackground
-            SectionTitle.BorderColor3 = Library.Theme.ObjectBorder
-            SectionTitle.Text = options.Name
-            SectionTitle.TextColor3 = Library.Theme.Text
-            SectionTitle.Font = Enum.Font.SourceSans
-            SectionTitle.TextSize = 14
-
-            return SectionFrame
+            table.insert(tab.Sections, section)
+            return section
         end
 
-        return Sections
+        table.insert(ui.Tabs, tab)
+        return tab
     end
 
-    return Tabs
-end
-
-function Library:Toggle(parent, options)
-    local ToggleFrame = Instance.new("Frame")
-    local ToggleButton = Instance.new("TextButton")
-    local ToggleLabel = Instance.new("TextLabel")
-
-    ToggleFrame.Name = options.Name .. "Toggle"
-    ToggleFrame.Parent = parent
-    ToggleFrame.Size = UDim2.new(1, -10, 0, 30)
-    ToggleFrame.Position = UDim2.new(0, 5, 0, #parent:GetChildren() * 35 - 35)
-    ToggleFrame.BackgroundColor3 = Library.Theme.ObjectBackground
-    ToggleFrame.BorderColor3 = Library.Theme.ObjectBorder
-
-    ToggleButton.Name = "ToggleButton"
-    ToggleButton.Parent = ToggleFrame
-    ToggleButton.Size = UDim2.new(0, 20, 0, 20)
-    ToggleButton.Position = UDim2.new(1, -25, 0.5, -10)
-    ToggleButton.BackgroundColor3 = Library.Theme.ObjectBackground
-    ToggleButton.BorderColor3 = Library.Theme.ObjectBorder
-    ToggleButton.Text = ""
-
-    ToggleLabel.Name = "ToggleLabel"
-    ToggleLabel.Parent = ToggleFrame
-    ToggleLabel.Size = UDim2.new(1, -30, 1, 0)
-    ToggleLabel.Position = UDim2.new(0, 5, 0, 0)
-    ToggleLabel.BackgroundTransparency = 1
-    ToggleLabel.Text = options.Name
-    ToggleLabel.TextColor3 = Library.Theme.Text
-    ToggleLabel.Font = Enum.Font.SourceSans
-    ToggleLabel.TextSize = 14
-    ToggleLabel.TextXAlignment = Enum.TextXAlignment.Left
-
-    local toggled = false
-
-    ToggleButton.MouseButton1Click:Connect(function()
-        toggled = not toggled
-        options.Callback(toggled)
-        ToggleButton.BackgroundColor3 = toggled and Library.Theme.Accent or Library.Theme.ObjectBackground
-    end)
-
-    return ToggleFrame
+    return ui
 end
 
 return Library
